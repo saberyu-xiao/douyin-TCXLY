@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>跳转中...</title>
+    <script>
+        // 解密函数（匹配您的新混淆规则）
+        function decryptUID(encoded) {
+            // 步骤1：去除自定义前缀"TCXLY_"和后缀"_310"
+            const raw = encoded.replace(/^TCXLY_|_310$/g, '');
+            // 步骤2：Base64解码原始用户ID
+            return atob(raw);
+        }
+
+        // 设备检测与跳转核心逻辑
+        function redirect() {
+            const params = new URLSearchParams(window.location.search);
+            const encodedUID = params.get('uid');
+
+            // 参数检查
+            if (!encodedUID) {
+                alert('错误：缺少用户ID参数');
+                return;
+            }
+
+            try {
+                const uid = decryptUID(encodedUID); // 解密得到真实ID
+                const tikTokScheme = `snssdk1128://user/profile/${uid}`;
+                const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+                const isAndroid = /Android/.test(navigator.userAgent);
+
+                // ----------------------------
+                // iOS 设备处理逻辑
+                // ----------------------------
+                if (isIOS) {
+                    // 第一阶段：尝试直接打开抖音App
+                    window.location.href = tikTokScheme;
+                    
+                    // 第二阶段：2秒后检测是否跳转成功
+                    setTimeout(() => {
+                        // 如果仍在当前页面，跳转App Store
+                        if (!document.hidden) {
+                            window.location.href = 'https://apps.apple.com/cn/app/抖音/id1142110895';
+                        }
+                    }, 2000);
+                }
+
+                // ----------------------------
+                // 安卓设备处理逻辑
+                // ----------------------------
+                if (isAndroid) {
+                    // 使用Android Intent Scheme
+                    window.location.href = `intent://user/profile/${uid}#Intent;scheme=snssdk1128;package=com.ss.android.ugc.aweme;end`;
+                    
+                    // 备用下载方案
+                    setTimeout(() => {
+                        document.getElementById('android-guide').style.display = 'block';
+                    }, 2000);
+                }
+
+                // ----------------------------
+                // 非移动设备处理
+                // ----------------------------
+                if (!isIOS && !isAndroid) {
+                    document.body.innerHTML = '<h1>请使用手机扫描NFC标签</h1>';
+                }
+
+            } catch (error) {
+                console.error('解密失败:', error);
+                alert('非法请求');
+            }
+        }
+    </script>
+</head>
+<body onload="redirect()">
+    <!-- 安卓用户备用下载指引（默认隐藏） -->
+    <div id="android-guide" style="display:none; padding:20px; font-family:Arial;">
+        <h3>检测到未安装抖音APP</h3>
+        <p>请点击下方链接下载：</p>
+        <a href="https://www.douyin.com/home" 
+           style="color:blue; text-decoration:underline;">
+           点击下载抖音APP安卓版
+        </a>
+        <p>下载完成后，请按照以下步骤操作：</p>
+        <ol>
+            <li>打开文件管理器找到下载的APK文件</li>
+            <li>点击安装（需允许安装未知来源应用）</li>
+            <li>安装完成后重新扫描NFC标签</li>
+        </ol>
+    </div>
+</body>
+</html>
